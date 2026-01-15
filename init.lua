@@ -2,7 +2,7 @@
 
 luahuml
 Huml decoder and encoder
-Version 0.1.0
+Version 0.1.1
 for Lua Versions 5.1 to 5.5
 for Huml Version 0.2.0
 
