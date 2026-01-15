@@ -24,6 +24,7 @@ local tokens = {
 	comment_mark = "#",
 	empty_dict = "{}",
 	empty_list = "[]",
+	["false"] = "false",
 	hexadecimal_mark = "0x",
 	infinity = "inf",
 	inline_vector_item_delimiter = ",",
@@ -35,17 +36,15 @@ local tokens = {
 	octal_mark = "0o",
 	scalar_delimiter = ":",
 	string_mark = "\"",
+	["true"] = "true",
 	vector_delimiter = "::"
 	}
-tokens["true"] = "true"
-tokens["false"] = "false"
 local characters_that_could_be_in_unenclosed_token = "A-Za-z0-9%-_%+%[%]{}%."
 -- functions
 local char
 local escape_control_characters_function
 local fall
 local split
-local trim
 local valid_key
 function char(input_string, character)
 	return sub(input_string, character, character)
@@ -527,11 +526,11 @@ function export.decode(huml_string)
 					end
 				--
 				if char(item, 1) == " " then
-					local quote = escape_control_characters_function(trim(item))
+					local quote = escape_control_characters_function(item)
 					return nil, "Unacceptable space encountered before an item ⟨" .. quote .. "⟩ encountered inside an inline vector"
 					end
 				if char(item, - 1) == " " then
-					local quote = escape_control_characters_function(trim(item))
+					local quote = escape_control_characters_function(item)
 					return nil, "Unacceptable space encountered after an item ⟨" .. quote .. "⟩ encountered inside an inline vector"
 					end
 				-- determining what type of item item is: a list item (unmarked) or a dict item
@@ -979,7 +978,13 @@ function export.encode(lua_value, escape_control_characters, split_numbers)
 						end_of_line = out_of_string
 						end
 					local line = sub(string_item, start_of_line + 1, end_of_line - 1)
-					insert(multiline_item, rep("  ", indentation_level + 1) .. line)
+					--
+					local base_and_secondary_indentation = indentation_level + 1
+					if base_and_secondary_indentation == 0 then -- Its indent was - 1, so it’s a solitary value.
+						base_and_secondary_indentation = 1 -- The internal content still needs at least 1 indent.
+						end
+					base_and_secondary_indentation = rep("  ", base_and_secondary_indentation)
+					insert(multiline_item, base_and_secondary_indentation .. line)
 					end
 				--
 				insert(multiline_item, rep("  ", indentation_level) .. tokens.multiline_string_mark)
@@ -1139,11 +1144,6 @@ function split(string_to_split, pattern, start_point, end_point, plain)
 			)
 		end
 	--
-	return output
-	end
-function trim(input_string)
-	local output = gsub(input_string, "^%s+", "")
-	output = gsub(output, "%s+$", "")
 	return output
 	end
 function valid_key(key)
